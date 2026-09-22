@@ -1,0 +1,33 @@
+{
+  "summary": "Preliminary proposal to resolve PyLance 6.x compatibility issue in write_lance caused by the removal of the storage_options_provider argument.",
+  "assumptions": [
+    "Actual source files were not provided in the prompt, so exact existing code cannot be shown and proposed code is preliminary.",
+    "PyLance 6.x (or 0.6.x+) removed the storage_options_provider keyword argument from its dataset writing API.",
+    "Ray Data's write_lance implementation needs to conditionally handle or omit storage_options_provider when invoking PyLance."
+  ],
+  "changes": [
+    {
+      "file": "python/ray/data/_internal/datasource/lance_datasource.py",
+      "purpose": "Update parameter handling in write_lance to maintain compatibility with PyLance 6.x.",
+      "before": "",
+      "after": "# Preliminary pseudocode:\nimport inspect\nimport lance\n\n# Safely handle storage_options_provider parameter based on PyLance API support\nsig = inspect.signature(lance.write_dataset)\nkwargs = dict(kwargs)\nif \"storage_options_provider\" in kwargs and \"storage_options_provider\" not in sig.parameters:\n    kwargs.pop(\"storage_options_provider\", None)",
+      "explanation": "Inspects the signature of lance.write_dataset or checks PyLance version to prevent passing storage_options_provider when unsupported in PyLance 6.x."
+    }
+  ],
+  "tests": [
+    {
+      "file": "python/ray/data/tests/test_lance.py",
+      "description": "Verify write_lance functionality across supported PyLance versions.",
+      "code": "# Preliminary test pseudocode\ndef test_write_lance_pylance_compatibility(tmp_path):\n    ds = ray.data.range(10)\n    ds.write_lance(str(tmp_path / \"lance_dataset\"))\n    assert (tmp_path / \"lance_dataset\").exists()"
+    }
+  ],
+  "verificationSteps": [
+    "Locate exact usages of storage_options_provider in Ray Data Lance integration files once source is accessible.",
+    "Install PyLance 6.x in the test environment and run Ray Data Lance integration tests.",
+    "Ensure write_lance completes without raising a TypeError due to unexpected storage_options_provider keyword argument."
+  ],
+  "warnings": [
+    "Source files were not provided; this proposal is preliminary.",
+    "Care must be taken to retain backwards compatibility if older versions of PyLance are still supported by Ray."
+  ]
+}
