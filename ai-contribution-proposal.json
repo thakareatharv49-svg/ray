@@ -1,36 +1,29 @@
 {
-  "summary": "Fix compatibility between Ray Data's write_lance / LanceDatasink and PyLance by inspecting lance.write_dataset parameters or package version before passing storage_options_provider.",
+  "summary": "Update Ray Data's Lance datasink to dynamically inspect the signature of `lance.write_dataset` prior to invocation to prevent `TypeError` when writing datasets with newer versions of Lance.",
   "assumptions": [
-    "The lance.write_dataset function signature is available for inspection.",
-    "The installed PyLance version is known.",
-    "The lance module version is known or can be easily determined."
+    "Ray Data's Lance datasink implementation passes `storage_options_provider` when invoking `lance.write_dataset`.",
+    "PyLance 6.x (lance 0.6.x+) has removed the `storage_options_provider` parameter from `lance.write_dataset`.",
+    "The `lance.write_dataset` call is present in `python/ray/data/_internal/datasource/lance_datasink.py`."
   ],
   "changes": [
     {
       "file": "python/ray/data/_internal/datasource/lance_datasink.py",
-      "purpose": "Modify lance.write_dataset invocation to include storage_options_provider conditionally.",
+      "purpose": "Dynamically inspect the signature of `lance.write_dataset` prior to invocation.",
       "before": "",
-      "after": "if supported: lance.write_dataset(**kwargs, storage_options_provider=True) else lance.write_dataset(**kwargs)",
+      "after": "if 'storage_options_provider' in inspect.signature(lance.write_dataset).parameters:\n  kwargs.pop('storage_options_provider')",
       "explanation": ""
     },
     {
       "file": "python/ray/data/tests/test_lance.py",
-      "description": "Add unit test to verify dataset writes succeed with and without storage_options_provider.",
-      "code": "def test_lance_write_dataset_with_provider(self):\n  # Test setup and data preparation\n  dataset = write_lance(...)  # With storage_options_provider\n  assert dataset.success\n\ndef test_lance_write_dataset_without_provider(self):\n  # Test setup and data preparation\n  dataset = write_lance(...)  # Without storage_options_provider\n  assert dataset.success"
+      "description": "Add unit test to verify compatibility across PyLance versions.",
+      "code": "import unittest\nfrom ray.data import write_lance\nfrom inspect import signature\n\nclass TestLanceWriteDataset(unittest.TestCase):\n  def test_write_lance_without_storage_options_provider(self):\n    with self.assertRaises(TypeError):\n      write_lance(lance.write_dataset, {})"
     }
   ],
   "tests": [
     {
       "file": "python/ray/data/tests/test_lance.py",
-      "description": "Test lance.write_dataset behavior when storage_options_provider is not accepted.",
-      "code": "def test_lance_write_dataset_without_provider(self):\n  # Test setup and data preparation\n  dataset = write_lance(...)  # Without storage_options_provider\n  assert dataset.success\n"
+      "description": "Verify compatibility across PyLance versions.",
+      "code": "import unittest\nfrom ray.data import write_lance\nfrom inspect import signature\n\nclass TestLanceWriteDataset(unittest.TestCase):\n  def test_write_lance_with_storage_options_provider(self):\n    lance_version = '0.5.0'\n    lance.write_dataset.__signature__(f"
     }
-  ],
-  "verificationSteps": [
-    "Inspect lance.write_dataset function signature and verify PyLance version support for storage_options_provider.",
-    "Run updated unit tests in python/ray/data/tests/test_lance.py to ensure compatibility and functionality."
-  ],
-  "warnings": [
-    "Watch for different versioning schemes or signature changes in PyLance across minor releases."
   ]
 }
