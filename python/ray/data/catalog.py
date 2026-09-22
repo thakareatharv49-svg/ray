@@ -472,23 +472,23 @@ class DatabricksUnityCatalog(Catalog):
             raise ValueError("Azure UC credentials missing a SAS token.")
         return sas_token
 
-    @classmethod
+    @staticmethod
     def _parse_azure_creds(
-        cls, sas: "AzureUserDelegationSas"
+        sas: "AzureUserDelegationSas"
     ) -> Dict[str, Optional[str]]:
         creds: Dict[str, Optional[str]] = {
-            _AZURE_STORAGE_SAS_TOKEN: cls._azure_sas_token(sas)
+            _AZURE_STORAGE_SAS_TOKEN: DatabricksUnityCatalog._azure_sas_token(sas)
         }
         return creds
 
-    @classmethod
-    def _azure_storage_options(cls, sas: "AzureUserDelegationSas") -> Dict[str, str]:
+    @staticmethod
+    def _azure_storage_options(sas: "AzureUserDelegationSas") -> Dict[str, str]:
         """Vended SAS in the form deltalake's object_store reads.
 
-        `azure_storage_sas_token` is one of object_store's accepted aliases for
+        azure_storage_sas_token is one of object_store's accepted aliases for
         the SAS config key. The account name is not included: it is already in
-        the `abfss://<container>@<account>.dfs.core.windows.net/...` URL that
+        the abfss://<container>@<account>.dfs.core.windows.net/... URL that
         accompanies these options, and duplicating it here would let the two
         disagree.
         """
-        return {_AZURE_STORAGE_SAS_TOKEN_OPTION: cls._azure_sas_token(sas)}
+        return {_AZURE_STORAGE_SAS_TOKEN_OPTION: DatabricksUnityCatalog._azure_sas_token(sas)}
